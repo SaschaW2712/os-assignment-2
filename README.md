@@ -4,5 +4,5 @@
 
 
 ## To run:
-$ g++ scheduler.cpp 
+$ std=c++14 g++ scheduler.cpp 
 $ ./a.out data_1111.txt out_1111.txt
