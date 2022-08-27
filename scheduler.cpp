@@ -12,6 +12,10 @@ andrey.kan@adelaide.edu.au
 #include <fstream>
 #include <deque>
 #include <vector>
+#include <chrono> // to measure run time
+
+using namespace std;
+using namespace std::chrono;
 
 // std is a namespace: https://www.cplusplus.com/doc/oldtutorial/namespaces/
 const int TIME_ALLOWANCE = 8;  // allow to use up to this number of time slots at once
@@ -102,6 +106,8 @@ void print_state(
 // https://www.geeksforgeeks.org/command-line-arguments-in-c-cpp/
 int main(int argc, char *argv[])
 {
+    auto start = high_resolution_clock::now(); // Get timepoint at start of algorithm
+
     if (argc != 3)
     {
         std::cerr << "Provide input and output file names." << std::endl;
@@ -175,6 +181,19 @@ int main(int argc, char *argv[])
         // exit loop when there are no new arrivals, no waiting and no playing customers
         all_done = (arrival_events.empty() && queue.empty() && (current_id == -1));
     }
+
+    auto stop = high_resolution_clock::now(); // Get timepoint at end of algorithm
+    auto duration = duration_cast<seconds>(stop - start);
+
+    if (duration.count() > 0)
+    {
+        auto duration = duration_cast<minutes>(stop - start);
+        cout << "Run time exceeds 5 minutes (" << duration.count() << " mins)" << endl;
+    } else {
+        cout << "Run time: " << duration.count() << "s" << endl;
+    }
+
+    
 
     return 0;
 }
