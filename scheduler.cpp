@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
 
     if (duration.count() > 0)
     {
-        auto duration = duration_cast<minutes>(stop - start);
-        cout << "Run time exceeds 5 minutes (" << duration.count() << " mins)" << endl;
+        auto durationMins = duration_cast<minutes>(stop - start);
+        cout << "Run time exceeds 5 minutes (" << durationMins.count() << " mins)" << endl;
     } else {
         cout << "Run time: " << duration.count() << "s" << endl;
     }

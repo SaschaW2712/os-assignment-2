@@ -1,0 +1,17 @@
+#!/bin/bash
+
+g++ -std=c++14 baseline.cpp -o baseline -w
+if [[ $? == 0 ]]; then
+    ./baseline $1 ${2}_baseline
+fi
+
+g++ -std=c++14 scheduler.cpp -o scheduler -Wall -Wextra -Wshadow
+if [[ $? == 0 ]]; then
+    ./scheduler $1 ${2}_scheduler
+fi
+
+g++ -std=c++14 compare_stats.cpp -o compare_stats -Werror
+
+if [[ $? == 0 ]]; then
+    ./compare_stats $1 $2
+fi
