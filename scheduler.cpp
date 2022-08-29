@@ -17,7 +17,6 @@ andrey.kan@adelaide.edu.au
 using namespace std;
 using namespace std::chrono;
 
-// std is a namespace: https://www.cplusplus.com/doc/oldtutorial/namespaces/
 const int TIME_ALLOWANCE = 8;  // allow to use up to this number of time slots at once
 const int PRINT_LOG = 0; // print detailed execution trace
 
@@ -27,7 +26,7 @@ public:
     std::string name;
     int priority;
     int arrival_time;
-    int slots_remaining; // how many time slots are still needed
+    int slots_remaining; // how many time slots are still needed to fulfill their desired play time
     int playing_since;
 
     Customer(std::string par_name, int par_priority, int par_arrival_time, int par_slots_remaining)
@@ -36,7 +35,7 @@ public:
         priority = par_priority;
         arrival_time = par_arrival_time;
         slots_remaining = par_slots_remaining;
-        playing_since = -1;
+        playing_since = -1; // this is updated to the correct start time when the customer gets on the machine
     }
 };
 
@@ -53,6 +52,8 @@ public:
     }
 };
 
+
+// Reads the input file line by line and initializes customers and arrival_events.
 void initialize_system(
     std::ifstream &in_file,
     std::deque<Event> &arrival_events,
@@ -62,7 +63,6 @@ void initialize_system(
     int priority, arrival_time, slots_requested;
 
     // read input file line by line
-    // https://stackoverflow.com/questions/7868936/read-file-line-by-line-using-ifstream-in-c
     int customer_id = 0;
     while (in_file >> name >> priority >> arrival_time >> slots_requested)
     {
@@ -77,6 +77,9 @@ void initialize_system(
     }
 }
 
+
+// Prints the current state of the arcade machine to out_file.
+// This is called at the end of each scheduler "time slot" loop iteration.
 void print_state(
     std::ofstream &out_file,
     int current_time,
@@ -102,12 +105,80 @@ void print_state(
     std::cout << '\n';
 }
 
-// process command line arguments
-// https://www.geeksforgeeks.org/command-line-arguments-in-c-cpp/
+void schedule_baseline(
+    std::deque<Event> &arrival_events,
+    std::vector<Customer> &customers,
+    std::ofstream &out_file
+) {
+    int current_id = -1; // who is using the machine now, -1 means nobody
+    int time_out = -1; // time when current customer will be preempted
+    std::deque<int> queue; // waiting queue
+
+    bool all_done = false;
+
+    // step by step simulation of each time slot
+    for (int current_time = 0; !all_done; current_time++)
+    {
+        // move newly arrived customers from arrivals to the queue
+        while (!arrival_events.empty() && (current_time == arrival_events[0].event_time))
+        {
+            queue.push_back(arrival_events[0].customer_id);
+            arrival_events.pop_front();
+        }
+
+        // check if we need to take a customer off the machine
+        if (current_id >= 0)
+        {
+            if (current_time == time_out)
+            {
+                int last_run = current_time - customers[current_id].playing_since;
+                customers[current_id].slots_remaining -= last_run;
+
+                if (customers[current_id].slots_remaining > 0)
+                {
+                    // customer is not done yet, waiting for the next chance to play
+                    queue.push_back(current_id);
+                }
+
+                current_id = -1; // the machine is free now
+            }
+        }
+
+        // if machine is empty, schedule a new customer
+        if (current_id == -1)
+        {
+            if (!queue.empty()) // is anyone waiting?
+            {
+                current_id = queue.front();
+                queue.pop_front();
+
+                if (TIME_ALLOWANCE > customers[current_id].slots_remaining)
+                {
+                    time_out = current_time + customers[current_id].slots_remaining;
+                }
+                else
+                {
+                    time_out = current_time + TIME_ALLOWANCE;
+                }
+
+                customers[current_id].playing_since = current_time;
+            }
+        }
+
+        print_state(out_file, current_time, current_id, arrival_events, queue);
+
+        // exit loop when there are no new arrivals, no waiting and no playing customers
+        all_done = (arrival_events.empty() && queue.empty() && (current_id == -1));
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    auto start = high_resolution_clock::now(); // Get timepoint at start of algorithm
+    // Get timepoint at start of algorithm
+    auto start = high_resolution_clock::now();
 
+
+    // Validate input files
     if (argc != 3)
     {
         std::cerr << "Provide input and output file names." << std::endl;
@@ -121,68 +192,19 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // deque: https://www.geeksforgeeks.org/deque-cpp-stl/
-    // vector: https://www.geeksforgeeks.org/vector-in-cpp-stl/
+    // Initialize the events and customers from the input file
     std::deque<Event> arrival_events; // new customer arrivals
     std::vector<Customer> customers; // information about each customer
-
-    // read information from file, initialize events queue
     initialize_system(in_file, arrival_events, customers);
 
-    int current_id = -1; // who is using the machine now, -1 means nobody
-    int time_out = -1; // time when current customer will be preempted
-    std::deque<int> queue; // waiting queue
 
-    // step by step simulation of each time slot
-    bool all_done = false;
-    for (int current_time = 0; !all_done; current_time++)
-    {
-        // welcome newly arrived customers
-        while (!arrival_events.empty() && (current_time == arrival_events[0].event_time))
-        {
-            queue.push_back(arrival_events[0].customer_id);
-            arrival_events.pop_front();
-        }
-        // check if we need to take a customer off the machine
-        if (current_id >= 0)
-        {
-            if (current_time == time_out)
-            {
-                int last_run = current_time - customers[current_id].playing_since;
-                customers[current_id].slots_remaining -= last_run;
-                if (customers[current_id].slots_remaining > 0)
-                {
-                    // customer is not done yet, waiting for the next chance to play
-                    queue.push_back(current_id);
-                }
-                current_id = -1; // the machine is free now
-            }
-        }
-        // if machine is empty, schedule a new customer
-        if (current_id == -1)
-        {
-            if (!queue.empty()) // is anyone waiting?
-            {
-                current_id = queue.front();
-                queue.pop_front();
-                if (TIME_ALLOWANCE > customers[current_id].slots_remaining)
-                {
-                    time_out = current_time + customers[current_id].slots_remaining;
-                }
-                else
-                {
-                    time_out = current_time + TIME_ALLOWANCE;
-                }
-                customers[current_id].playing_since = current_time;
-            }
-        }
-        print_state(out_file, current_time, current_id, arrival_events, queue);
+    // Schedule and output results using the baseline algorithm
+    // IMPORTANT: to be replaced with the new algorithm
+    schedule_baseline(arrival_events, customers, out_file);
 
-        // exit loop when there are no new arrivals, no waiting and no playing customers
-        all_done = (arrival_events.empty() && queue.empty() && (current_id == -1));
-    }
 
-    auto stop = high_resolution_clock::now(); // Get timepoint at end of algorithm
+    // Get timepoint at end of algorithm and calculate duration
+    auto stop = high_resolution_clock::now();
     auto duration = duration_cast<seconds>(stop - start);
 
     if (duration.count() > 0)
@@ -193,7 +215,6 @@ int main(int argc, char *argv[])
         cout << "Run time: " << duration.count() << "s" << endl;
     }
 
-    
 
     return 0;
 }
