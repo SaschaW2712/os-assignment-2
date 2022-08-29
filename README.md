@@ -12,8 +12,8 @@ $ ./a.out data_1111.txt out_1111.txt
 $ ./run data_1111.txt out_1111.txt 
 
 ## Code information references:
-Std as a namespace: https://www.cplusplus.com/doc/oldtutorial/namespaces/
-Reading files line by line: https://stackoverflow.com/questions/7868936/read-file-line-by-line-using-ifstream-in-c
-Processing command-line arguments: https://www.geeksforgeeks.org/command-line-arguments-in-c-cpp/
-Deque: https://www.geeksforgeeks.org/deque-cpp-stl/
-Vector: https://www.geeksforgeeks.org/vector-in-cpp-stl/
+Std as a namespace: https://www.cplusplus.com/doc/oldtutorial/namespaces/  
+Reading files line by line: https://stackoverflow.com/questions/7868936/read-file-line-by-line-using-ifstream-in-c  
+Processing command-line arguments: https://www.geeksforgeeks.org/command-line-arguments-in-c-cpp/  
+Deque: https://www.geeksforgeeks.org/deque-cpp-stl/  
+Vector: https://www.geeksforgeeks.org/vector-in-cpp-stl/  
