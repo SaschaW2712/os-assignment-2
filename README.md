@@ -2,6 +2,7 @@
  - Kate Landon (a1767709)
  - William Ritossa (a1773086)
  - Sascha Williams (a1799837)
+ - Abigail Sparnon (a1740459)
 
 
 ## To run just the scheduler:
