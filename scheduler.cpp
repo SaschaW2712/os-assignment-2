@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
 
     // Schedule and output results using the baseline algorithm
     // IMPORTANT: to be replaced with the new algorithm
-    schedule_baseline(arrival_events, customers, out_file);
-
+    //schedule_baseline(arrival_events, customers, out_file);
+    abigails_superior_rrscheduler();
 
     // Get timepoint at end of algorithm and calculate duration
     auto stop = high_resolution_clock::now();
