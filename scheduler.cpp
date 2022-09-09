@@ -176,10 +176,6 @@ void schedule_baseline(
     }
 }
 
-void round_round(){
-    
-}
-
 int main(int argc, char *argv[])
 {
     // Get timepoint at start of algorithm
