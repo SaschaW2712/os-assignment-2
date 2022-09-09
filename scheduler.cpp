@@ -105,6 +105,10 @@ void print_state(
     std::cout << '\n';
 }
 
+void abigails_superior_rrscheduler(){
+    return;
+}
+
 void schedule_baseline(
     std::deque<Event> &arrival_events,
     std::vector<Customer> &customers,
