@@ -6,6 +6,8 @@ andrey.kan@adelaide.edu.au
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cstring>
+#include <iomanip>
 
 using namespace std;
 

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+echo "Baseline"
+echo "  Compile"
+g++ -std=c++14 baseline.cpp -o baseline -w
+if [[ $? == 0  && $# -eq 1 ]]; then
+    echo "  Run"
+    ./baseline data_${1}.txt out_${1}_baseline.txt
+    echo " "
+fi
+
+echo "Scheduler"
+echo "  Compile"
+g++ -std=c++14 scheduler.cpp -o scheduler -Wall -Wextra -Wshadow
+if [[ $? == 0  && $# -eq 1 ]]; then
+    echo "  Run"
+    ./scheduler data_${1}.txt out_${1}_scheduler.txt
+    echo " "
+fi
+
+echo "Compute"
+echo "  Compile"
+g++ -std=c++14 compute_stats.cpp -o compute_stats -Werror
+if [[ $? == 0 && $# -eq 1 ]]; then
+    echo "  Run"
+    echo "    Baseline"
+    ./compute_stats data_${1}.txt out_${1}_baseline.txt
+    echo "    Scheduler"
+    ./compute_stats data_${1}.txt out_${1}_scheduler.txt
+    echo " "
+fi
+
+echo "Compare"
+echo "  Compile"
+g++ -std=c++14 compare_stats.cpp -o compare_stats -Werror
+if [[ $? == 0  && $# -eq 1 ]] ; then
+    echo "  Run"
+    ./compare_stats data_${1}.txt out_${1}.txt
+    echo " "
+fi
