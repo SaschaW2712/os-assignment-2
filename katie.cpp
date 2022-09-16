@@ -10,7 +10,6 @@
 const int QUANTUM = 4; //value of the time quantum
 const int PRINT_LOG = 0; //???? what does this do
 
-
 using namespace std; //so i can be lazzzyyy
 
 //************************************************

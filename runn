@@ -9,12 +9,12 @@ if [[ $? == 0  && $# -eq 1 ]]; then
     echo " "
 fi
 
-echo "Scheduler"
+echo "Katie"
 echo "  Compile"
-g++ -std=c++14 scheduler.cpp -o scheduler -Wall -Wextra -Wshadow
+g++ -std=c++14 katie.cpp -o katie -Wall -Wextra -Wshadow
 if [[ $? == 0  && $# -eq 1 ]]; then
     echo "  Run"
-    ./scheduler data_${1}.txt out_${1}_scheduler.txt
+    ./katie data_${1}.txt out_${1}_katie.txt > shh.txt
     echo " "
 fi
 
@@ -25,16 +25,7 @@ if [[ $? == 0 && $# -eq 1 ]]; then
     echo "  Run"
     echo "    Baseline"
     ./compute_stats data_${1}.txt out_${1}_baseline.txt
-    echo "    Scheduler"
-    ./compute_stats data_${1}.txt out_${1}_scheduler.txt
-    echo " "
-fi
-
-echo "Compare"
-echo "  Compile"
-g++ -std=c++14 compare_stats.cpp -o compare_stats -Werror
-if [[ $? == 0  && $# -eq 1 ]] ; then
-    echo "  Run"
-    ./compare_stats data_${1}.txt out_${1}.txt
+    echo "    Katie"
+    ./compute_stats data_${1}.txt out_${1}_katie.txt
     echo " "
 fi
