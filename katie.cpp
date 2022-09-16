@@ -7,10 +7,68 @@
 #include <vector>
 #include <algorithm>
 
-const int QUANTUM = 4; //value of the time quantum
-const int PRINT_LOG = 0; //???? what does this do
-
 using namespace std; //so i can be lazzzyyy
+
+const int PRINT_LOG = 0; //???? what does this do
+const int QUANTUM = 5; //value of the time quantum
+
+// VALUES TO INCREASE PRIORITY BY
+const int SMALL_TIME_REMAINS = 30;
+
+const int MAX_BETWEEN = 220;
+const int LONG_BETWEEN = 30;
+
+const int MAX_WAIT = 200;
+const int LONG_WAIT = 70;
+
+const int NOT_YET_PLAYED = 28;
+
+const int PRIORITY_CUSTOMER = 8;
+
+// PRIORITISER FUNCTIONS - increases priority if ...
+// higher in the queue (queue sorted based on arrival time)
+int queue_position(int position, int size)
+{
+    return position;
+}
+
+// time_left (if smaller than quantum, increase priority)
+int time_left(int time_left)
+{
+    int value = SMALL_TIME_REMAINS;
+    return (time_left <= QUANTUM) ? value : 0;
+}
+
+// time_between (if large time between plays, increase priority)
+int time_between(int time_between)
+{
+    int too_big = MAX_BETWEEN;
+    int value = LONG_BETWEEN;
+    return (time_between >= too_big) ? value : 0;
+}
+
+// waiting time (if got here a while a go and not done, increase priority)
+int wait_time(int time_between)
+{
+    int too_big = MAX_WAIT;
+    int value = LONG_WAIT;
+    return (time_between >= too_big) ? value : 0;
+}
+
+// haven't played (if haven't played yet, increase priority)
+int first_play(int last_play)
+{
+    int value = NOT_YET_PLAYED;
+    return (last_play < 0) ? value : 0;
+}
+
+// priority customer (if a priority customer, increase priority)
+int priority (int p)
+{
+    int value = PRIORITY_CUSTOMER;
+    return (p == 0) ? value : 0;
+}
+
 
 //************************************************
 // PART 1: set up classes
@@ -69,7 +127,6 @@ private:
 
 int Customer::class_id = 0;
 
-
 // 1B: Event class
 //****************
 class Event
@@ -93,23 +150,6 @@ public:
 //      file >> a;
 //      file >> b;
 //************************************************
-
-
-void bubble_sort(vector<Customer*> v, bool isBiggerThan(Customer * a, Customer * b))
-{
-    for(int i = 0; i < v.size()-1; i++)
-    {
-        for(int j = 0; j < v.size()-i-1; j++)
-        {
-            if(isBiggerThan(v[j], v[j+1]))
-            {
-                Customer temp = *v[j];
-                *v[j] = *v[j+1];
-                *v[j+1] = temp;
-            }
-        }
-    }
-}
 
 // 2A: parse input
 //************************
@@ -155,27 +195,65 @@ void print_state(ofstream &out_file, int current_time, int current_id, const deq
     std::cout << '\n';
 }
 
-
 //************************************************
-// PART 3: queue time!!
+// PART 3: set up sorting functions
+// sorts queue using a bubble sort with a given comparator
+// what we want depends on how we are using the vector at the moment
 //************************************************
 
+// SORT
+// pushes first value (a) to back if comparator returns true
+//************************
+void bubble_sort(vector<Customer*> v, bool pushBack(Customer * a, Customer * b))
+{
+    for(int i = 0; i < v.size()-1; i++)
+    {
+        for(int j = 0; j < v.size()-i-1; j++)
+        {
+            if(pushBack(v[j], v[j+1]))
+            {
+                Customer temp = *v[j];
+                *v[j] = *v[j+1];
+                *v[j+1] = temp;
+            }
+        }
+    }
+}
+//************************
+//COMPARATORS
+//************************
 
-//30: helper functions?
-//********
+//************
+//  most_time() (NOT USED)
+// true if a has more time i.e. a is pushed back when has more time remaining
+// in this case we consider
+//          start of vector = start of queue
+//************
 
-//most at start, least at end
 bool most_time(Customer* a, Customer* b)
 {
     return a->slots_remaining > b->slots_remaining;
 }
 
-//least at start, most at end
+//************
+//  least_wait()
+// true if a arrived earlier .e. a is pushed back if a came first
+// we increase priority as we go through the queue so we say
+// in this case we consider
+//          start of vector = lowest priority
+//************
 bool least_wait(Customer* a, Customer* b)
 {
     return a->arrival_time < b->arrival_time;
-
 }
+
+//************
+//  priority_sort()
+// true if a has more priority i.e. biggest priority value at end
+//      if same, true if a arrived earlier i.e. earlier arrivals at end
+// in this case we consider
+//          end of vector = start of queue
+//************
 
 bool priority_sort(Customer * a, Customer * b)
 {
@@ -190,8 +268,24 @@ bool priority_sort(Customer * a, Customer * b)
     return a->total_priority > b->total_priority;
 }
 
+//************************************************
+// PART 4: queue time!!
+//************************************************
+
 //****************
-//3A: prioritiser
+//4A: prioritiser
+// steps:
+// 1) check there is something in the queue, if not return false
+// 2) sort from newest arrivals to latest
+// 3) go through queue and assign priority (where larger value == higher priority)
+// 4) sort from smallest to highest priority
+// priority factors
+//      - ARRIVAL POSITION: increase by position in queue sorted from newest to oldest
+//      - TIME REMAINING: increase priority if less than the quantum
+//      - TIME BETWEEN: increase priority if large time between plays
+//      - WAIT TIME: increase priority if arrival time was a LONG time ago
+//      - FIRST PLAY: increase priority if have not yet played
+//      - PRIORITY: increase priority if customer is priority customer
 //****************
 bool prioritise(vector<Customer*> customers, int current_time)
 {
@@ -205,34 +299,16 @@ bool prioritise(vector<Customer*> customers, int current_time)
     }
 
     cout << "\t  2: SORT BY LONGEST WAITING TIME" << endl;
-    for(int i = 0; i < customers.size(); i++)
-    {
-        cout << "PRE" << i << " " << customers[i]->id << endl;
-    }
-//    sort(customers.begin(), customers.end(), least_wait);
     bubble_sort(customers, least_wait);
 
     for(int i = 0; i < customers.size(); i++)
     {
- //       cout << "\t     SETTING " <<  i << endl;
-      //  int new_priority = current_time-customers[i]->arrival_time;
-        int new_priority = i*(3/2) + (i%(3/2));
-        if(customers[i]->slots_remaining <= QUANTUM)
-        {
-            new_priority += 130;
-        }
-        if((current_time-customers[i]->playing_since)>150)
-        {
-            new_priority += 8;
-        }
-        if(customers[i]->playing_since < 0)
-        {
-            new_priority += 28;
-        }
-        if(customers[i]->priority == 1)
-        {
-            new_priority += 7;
-        }
+        int new_priority = queue_position(i, customers.size());
+        new_priority += time_left(customers[i]->slots_remaining);
+        new_priority += time_between(current_time - customers[i]->playing_since);
+        new_priority += wait_time(current_time - customers[i]->arrival_time);
+        new_priority += first_play(customers[i]->playing_since);
+        new_priority += priority(customers[i]->priority);
         customers[i]->total_priority = new_priority;
     }
     cout << "\t  5: SORT FINAL PRIORITIES" << endl;
@@ -242,7 +318,33 @@ bool prioritise(vector<Customer*> customers, int current_time)
 }
 
 //****************
-//3B: scheduler
+//4B: scheduler
+// for each time event,
+// 1) move new arrivals from arrivals to queue
+// 2) handle customer on machine
+// 3) put customer on machine if none there/no one longer there
+// 4) print state to out
+// 5) check if there are customers left/still to come
+//      if not, return from scheduler
+//      else, keep going!
+
+// CASES FOR handling customer on machine
+// 1 - they have satisified their requested play time
+//      kick them off (resetting customer pointer & id)
+// 2 - they have no time left
+//      kick them off but remember them (reset pointer but not id)
+//      add them back to the queue
+// 3 - they have time left
+//      let them play a session
+
+// PROCESS for adding customer to machine
+// 1) call prioritiser on the queue
+//      if no queue, skip rest of process
+// 2) add customer at end of queue to the machine
+//      if same customer as before, give them 1 time block
+//      if new customer, give them the full quantum time block
+// 3) let customer play a session
+// 4) remove customer from queue
 //****************
 bool schedule(deque<Event> &arrival_events, ofstream &out) {
     vector <Customer*> queue; // sorted queue
@@ -295,8 +397,6 @@ bool schedule(deque<Event> &arrival_events, ofstream &out) {
         }
         if(current_customer == nullptr)
         {
-            int size = 0;
-
             cout << "  3: ADD CUSTOMER IF NONE" << endl;
             if(!prioritise(queue, current_time))
             {
@@ -306,7 +406,6 @@ bool schedule(deque<Event> &arrival_events, ofstream &out) {
             }
             else
             {
-                size = queue.size();
                 cout << "     QUEUE HAS PEOPLE" << endl;
                 current_customer = queue[queue.size()-1];
      if(queue.size()>2){           cout << "NEXT PRIOR" << queue[queue.size()-2]->total_priority << endl;}
@@ -338,11 +437,9 @@ bool schedule(deque<Event> &arrival_events, ofstream &out) {
             current_time = -10;
         }
 
-
     }
 
     return 1;
-
 }
 
 
